@@ -293,7 +293,7 @@
     </div>
 
     <div class="version-hint">
-      💡 <strong>Can't find your board?</strong> On your Chromebook, open a new tab and go to <a href="chrome://version">chrome://version</a>. Look for the "Platform" line — your board name is the word right after <code>stable-channel</code>. Example: <code>stable-channel-octopus</code> → board is <strong>octopus</strong>.<br>
+       <strong>Can't find your board?</strong> On your Chromebook, open a new tab and go to <a href="chrome://version">chrome://version</a>. Look for the "Platform" line — your board name is the word right after <code>stable-channel</code>. Example: <code>stable-channel-octopus</code> → board is <strong>octopus</strong>.<br>
       Blocked? Try <a href="chrome://system">chrome://system</a> and search for <code>CHROMEOS_RELEASE_DESCRIPTION</code>.
     </div>
 
@@ -367,7 +367,7 @@
         </div>
         <div class="method-body">
           <p>Direct unenrollment via BadSH1MMER — a modified recovery image that automatically deprovisions the device on boot. Works on many Cr50 boards where standard methods fail. <strong>Use this if not in developer mode.</strong></p>
-          <div class="utility-note">🎯 <strong>Instructions:</strong> Download BadSH1MMER for your board, flash to USB, boot in recovery mode, and follow the on-screen prompts for automatic unenrollment.</div>
+          <div class="utility-note"> <strong>Instructions:</strong> Download BadSH1MMER for your board, flash to USB, boot in recovery mode, and follow the on-screen prompts for automatic unenrollment.</div>
           <div class="method-footer">
             <a class="dl-btn" href="https://dl.crosbreaker.dev/ChromeOS/modified-recovery/badsh1mmer/" target="_blank">↓ Find Download on dl.crosbreaker.dev</a>
           </div>
@@ -413,7 +413,6 @@ const BOARD_DB = {
 const BOARD_NAMES = Object.keys(BOARD_DB).sort();
 document.getElementById('boardCount').textContent = BOARD_NAMES.length;
 
-// METHOD DEFINITIONS
 const METHODS = {
   sh1mmer: { name: "SH1MMER", difficulty: "easy", tag: "mt-easy", desc: "Boot a modified RMA shim image to deprovision the device. Works on unkeyrolled Cr50 boards.", compat: "✓ Unkeyrolled Cr50 boards · ChromeOS ≤ R125", steps: ["Find SH1MMER for your board on dl.crosbreaker.dev", "Flash to USB using Chromebook Recovery Utility", "Enter recovery: Esc + Refresh + Power", "Boot USB, select Un-Enroll", "Reboot and complete setup"] },
   badrecovery: { name: "BadRecovery", difficulty: "easy", tag: "mt-easy", desc: "Modified recovery image exploiting ChromeOS recovery scripts. Works on older Cr50 boards.", compat: "✓ Cr50 boards · ChromeOS R124 and below", steps: ["Find BadRecovery image for your board on dl.crosbreaker.dev", "Flash to USB", "Enter recovery mode", "Boot USB", "Enable developer mode", "Complete setup"] },
