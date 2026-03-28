@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enrolledocs</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050505; --fg: #e8e8e8;
+      --dim: rgba(255,255,255,0.45); --border: rgba(255,255,255,0.15);
+      --green: #4ade80; --yellow: #fbbf24; --red: #f87171; --blue: #60a5fa;
+      --purple: #c084fc;
+    }
+    html { background: var(--bg); }
+    body { min-height: 100vh; background: var(--bg); font-family: 'JetBrains Mono', monospace; color: var(--fg); overflow-x: hidden; }
+
+    .grid {
+      position: fixed; inset: -40px; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: moveGrid 12s linear infinite;
+    }
+    @keyframes moveGrid { to { transform: translate(-40px,-40px); } }
+
+    .credits {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      text-align: center; padding: 14px 0 10px;
+      font-size: 0.68rem; color: var(--dim); letter-spacing: 2px;
+      background: linear-gradient(to bottom, rgba(5,5,5,0.95) 60%, transparent);
+      pointer-events: none;
+    }
+
+    .page { display: none; position: relative; z-index: 1; min-height: 100vh; flex-direction: column; align-items: center; padding: 72px 22px 64px; }
+    .page.active { display: flex; }
+
+    h1 { font-size: clamp(2rem, 10vw, 3.6rem); letter-spacing: 3px; text-align: center; text-shadow: 0 0 28px rgba(255,255,255,0.2); line-height: 1.2; }
+    h2 { font-size: clamp(1.5rem, 8vw, 2.8rem); letter-spacing: 3px; text-align: center; text-shadow: 0 0 22px rgba(255,255,255,0.18); line-height: 1.2; }
+    h3 { font-size: clamp(1.1rem, 5vw, 1.6rem); letter-spacing: 2px; text-align: center; }
+
+    .line { width: 130px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent); margin: 20px auto 28px; flex-shrink: 0; }
+
+    .desc { font-size: clamp(0.75rem, 3.4vw, 0.88rem); color: rgba(255,255,255,0.6); line-height: 1.9; text-align: center; max-width: 520px; width: 100%; }
+
+    .terminal {
+      width: 100%; max-width: 580px; margin-top: 36px;
+      background: rgba(0,0,0,0.65); border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; box-shadow: 0 12px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
+      flex-shrink: 0;
+    }
+    .t-bar {
+      background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border);
+      padding: 10px 14px; display: flex; align-items: center; gap: 7px;
+    }
+    .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+    .t-label { margin-left: 6px; font-size: 0.67rem; color: var(--dim); letter-spacing: 1px; }
+    .t-body { padding: 18px 18px 22px; font-size: clamp(0.72rem, 3vw, 0.83rem); line-height: 1.95; }
+
+    .tl { display: block; min-height: 1.95em; }
+    .tl.cmd::before { content: '$ '; color: var(--green); }
+    .tl.ok   { color: var(--green);  padding-left: 14px; }
+    .tl.warn { color: var(--yellow); padding-left: 14px; }
+    .tl.done { color: var(--green);  padding-left: 14px; font-weight: 700; }
+
+    #p1terminal { opacity: 0; transform: translateY(28px); }
+
+    .btn {
+      margin-top: 48px; padding: 14px 50px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; letter-spacing: 2px;
+      border: 1px solid rgba(255,255,255,0.55); background: transparent; color: white;
+      cursor: pointer; border-radius: 4px;
+      transition: background 0.22s, color 0.22s, box-shadow 0.22s;
+      -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+    }
+    .btn:active, .btn:hover { background: white; color: black; box-shadow: 0 0 28px rgba(255,255,255,0.28); }
+
+    .back-btn {
+      margin-top: 36px; background: transparent; border: none;
+      color: var(--dim); font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; cursor: pointer; letter-spacing: 1px;
+      transition: color 0.2s; padding: 8px 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .back-btn:active, .back-btn:hover { color: white; }
+
+    .input-terminal {
+      width: 100%; max-width: 580px; margin-top: 36px;
+      background: rgba(0,0,0,0.65); border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; box-shadow: 0 12px 50px rgba(0,0,0,0.7);
+      opacity: 0; transform: translateY(28px); flex-shrink: 0;
+    }
+    .input-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 6px; }
+    .prompt { color: var(--green); font-size: clamp(0.68rem, 2.8vw, 0.8rem); white-space: nowrap; flex-shrink: 0; }
+    .board-input {
+      flex: 1; min-width: 60px; background: transparent; border: none; outline: none;
+      font-family: 'JetBrains Mono', monospace; font-size: clamp(0.72rem, 3vw, 0.83rem);
+      color: var(--fg); caret-color: var(--green);
+    }
+    .board-input::placeholder { color: rgba(255,255,255,0.2); }
+    .cursor-blink { display: inline-block; width: 7px; height: 13px; background: var(--green); animation: blink 1s step-end infinite; vertical-align: middle; flex-shrink: 0; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .suggest-row { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; min-height: 22px; }
+    .tag {
+      padding: 3px 10px; border: 1px solid var(--border); border-radius: 3px;
+      font-size: 0.67rem; color: var(--dim); cursor: pointer;
+      transition: border-color 0.18s, color 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tag:active, .tag:hover { border-color: var(--green); color: var(--green); }
+    .tag.selected { border-color: var(--green); color: var(--green); background: rgba(74,222,128,0.08); }
+
+    .result-row { margin-top: 10px; font-size: 0.77rem; min-height: 18px; }
+    .r-found { color: var(--green); } .r-notfound { color: var(--red); } .r-hint { color: var(--dim); font-style: italic; }
+
+    .version-hint {
+      width: 100%; max-width: 580px; margin-top: 14px;
+      background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 6px; padding: 10px 14px;
+      font-size: 0.7rem; color: rgba(96,165,250,0.8); line-height: 1.7;
+      flex-shrink: 0;
+    }
+    .version-hint a { color: var(--blue); text-decoration: none; border-bottom: 1px solid rgba(96,165,250,0.4); }
+    .version-hint a:hover { border-bottom-color: var(--blue); }
+
+    .confirm-btn {
+      margin-top: 28px; padding: 14px 50px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; letter-spacing: 2px;
+      border: 1px solid rgba(255,255,255,0.2); background: transparent;
+      color: rgba(255,255,255,0.25); cursor: not-allowed; border-radius: 4px;
+      transition: all 0.3s ease; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .confirm-btn.ready {
+      border-color: var(--green); color: var(--green);
+      cursor: pointer; box-shadow: 0 0 16px rgba(74,222,128,0.2);
+    }
+    .confirm-btn.ready:active, .confirm-btn.ready:hover {
+      background: var(--green); color: black; box-shadow: 0 0 28px rgba(74,222,128,0.45);
+    }
+
+    .sub-note { font-size: 0.7rem; color: rgba(255,255,255,0.3); text-align: center; font-style: italic; }
+
+    .device-header { text-align: center; margin-bottom: 6px; }
+    .board-badge {
+      display: inline-block; padding: 4px 14px; border: 1px solid var(--green);
+      border-radius: 3px; font-size: 0.75rem; color: var(--green); letter-spacing: 2px;
+      margin-bottom: 18px; text-transform: uppercase;
+    }
+
+    .info-grid {
+      width: 100%; max-width: 580px; margin-top: 28px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      flex-shrink: 0;
+    }
+    .info-card {
+      background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px 16px;
+    }
+    .info-card .label { font-size: 0.62rem; color: var(--dim); letter-spacing: 1.5px; margin-bottom: 6px; text-transform: uppercase; }
+    .info-card .value { font-size: 0.82rem; color: var(--fg); line-height: 1.4; }
+    .info-card .value.green { color: var(--green); }
+    .info-card .value.yellow { color: var(--yellow); }
+    .info-card .value.red { color: var(--red); }
+    .info-card .sub-val { font-size: 0.67rem; color: var(--dim); margin-top: 3px; }
+
+    .methods-container { width: 100%; max-width: 580px; margin-top: 20px; flex-shrink: 0; }
+    .methods-title { font-size: 0.7rem; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 12px; }
+
+    .method-card {
+      background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+      border-radius: 6px; overflow: hidden; margin-bottom: 12px;
+    }
+    .method-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .method-name { font-size: 0.83rem; font-weight: 600; letter-spacing: 1px; }
+    .method-tag {
+      font-size: 0.62rem; padding: 2px 8px; border-radius: 2px;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .mt-easy { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+    .mt-med  { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+    .mt-hard { background: rgba(248,113,113,0.12); color: var(--red);   border: 1px solid rgba(248,113,113,0.3); }
+
+    .method-body { padding: 14px 16px; font-size: 0.76rem; line-height: 1.8; color: rgba(255,255,255,0.7); display: none; }
+    .method-body.open { display: block; }
+    .method-body ol { margin-left: 18px; margin-top: 8px; }
+    .method-body li { margin-bottom: 6px; }
+    .method-compat {
+      margin-top: 10px; padding: 8px 12px;
+      background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 4px; font-size: 0.69rem; color: rgba(96,165,250,0.85); line-height: 1.6;
+    }
+    .dl-btn {
+      display: inline-block; margin-top: 12px; padding: 8px 20px;
+      border: 1px solid var(--blue); color: var(--blue); border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 1px;
+      text-decoration: none; transition: background 0.2s, color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+    }
+    .dl-btn:active, .dl-btn:hover { background: var(--blue); color: black; }
+    .chevron { font-size: 0.7rem; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+
+    .warning-box {
+      width: 100%; max-width: 580px; margin-top: 16px;
+      background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 6px; padding: 12px 16px;
+      font-size: 0.72rem; line-height: 1.7; flex-shrink: 0;
+    }
+    .warning-box.warning-yellow { color: var(--yellow); }
+    .warning-box.warning-orange { color: #fb923c; border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.07); }
+
+    .subtypes-list {
+      margin-top: 10px; font-size: 0.69rem; color: rgba(255,255,255,0.45);
+      display: flex; flex-wrap: wrap; gap: 5px;
+    }
+    .subtype-tag {
+      padding: 2px 8px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 3px;
+    }
+
+    .utility-code {
+      background: rgba(0,0,0,0.8); border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px; margin: 10px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; line-height: 1.6;
+      overflow-x: auto; white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--green);
+    }
+    .utility-note {
+      background: rgba(74,222,128,0.08); border-left: 3px solid var(--green);
+      padding: 8px 12px; margin: 8px 0; font-size: 0.7rem;
+      color: rgba(255,255,255,0.7);
+    }
+    .method-footer { margin-top: 12px; display: flex; justify-content: flex-start; }
+  </style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="credits">Crosbreaker • CriticalHD • exvy</div>
+
+  <!-- PAGE 1 -->
+  <div class="page active" id="page1">
+    <h1>Enrolled<br>Docs</h1>
+    <div class="line"></div>
+    <p class="desc">Unenrollment removes enterprise control from a managed ChromeOS device — restoring full user ownership and disabling enforced policies set by school or workplace admins.</p>
+
+    <div class="terminal" id="p1terminal">
+      <div class="t-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="t-label">chromeos — bash</span>
+      </div>
+      <div class="t-body" id="p1body"></div>
+    </div>
+
+    <p class="desc" style="margin-top:28px; font-size:0.72rem; color:rgba(255,255,255,0.35); font-style:italic;">
+      Covers enrollment mechanics, bypass techniques,<br>board-specific methods &amp; associated risks.
+    </p>
+    <button class="btn" id="continueBtn" onclick="showPage(2)">Continue →</button>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="page" id="page2">
+    <h2>Finding Your<br>Chromebook</h2>
+    <div class="line"></div>
+    <p class="desc">Enter your ChromeOS board name below. Find it at <a href="chrome://version" style="color:var(--green);text-decoration:none;border-bottom:1px solid rgba(74,222,128,0.4);" onclick="return false;">chrome://version</a> → look for the word after <code style="color:var(--green)">stable-channel</code> in the Platform line.</p>
+
+    <div class="input-terminal" id="inputTerminal">
+      <div class="t-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="t-label">board-lookup — interactive</span>
+      </div>
+      <div class="t-body">
+        <div class="input-row">
+          <span class="prompt">$ identify_board</span>
+          <input class="board-input" id="boardInput" type="text" placeholder="e.g. octopus, grunt, dedede…" autocomplete="off" spellcheck="false" oninput="onBoardInput()"/>
+          <span class="cursor-blink"></span>
+        </div>
+        <div class="suggest-row" id="suggestions"></div>
+        <div class="result-row" id="boardResult"><span class="r-hint">Type your board name above…</span></div>
+      </div>
+    </div>
+
+    <div class="version-hint">
+       <strong>Can't find your board?</strong> On your Chromebook, open a new tab and go to <a href="chrome://version">chrome://version</a>. Look for the "Platform" line — your board name is the word right after <code>stable-channel</code>. Example: <code>stable-channel-octopus</code> → board is <strong>octopus</strong>.<br>
+      Blocked? Try <a href="chrome://system">chrome://system</a> and search for <code>CHROMEOS_RELEASE_DESCRIPTION</code>.
+    </div>
+
+    <p class="sub-note" style="margin-top:16px;">
+      <span id="boardCount"></span> ChromeOS boards supported
+    </p>
+
+    <button class="confirm-btn" id="confirmBtn" onclick="confirmBoard()">Confirm Board →</button>
+    <button class="back-btn" onclick="showPage(1)">← back</button>
+  </div>
+
+  <!-- PAGE 3 -->
+  <div class="page" id="page3">
+    <div class="device-header">
+      <div class="board-badge" id="p3badge"></div>
+      <h3 id="p3title"></h3>
+    </div>
+    <div class="line"></div>
+
+    <div class="info-grid" id="p3grid"></div>
+    <div id="p3subtypes" class="subtypes-list" style="width:100%;max-width:580px;margin-top:10px;flex-shrink:0;"></div>
+
+    <div class="methods-container">
+      <div class="methods-title">▸ Available Unenrollment Methods</div>
+      <div id="methodsList"></div>
+    </div>
+
+    <!-- UTILITIES SECTION -->
+    <div class="methods-container" style="margin-top: 24px;">
+      <div class="methods-title">▸ Utilities</div>
+      
+      <div class="method-card">
+        <div class="method-header" onclick="toggleMethod(this)">
+          <span class="method-name">GBB</span>
+          <span style="display:flex;align-items:center;gap:8px;"><span class="method-tag mt-med">firmware</span><span class="chevron">▾</span></span>
+        </div>
+        <div class="method-body">
+          <p>Modify GBB flags to disable firmware restrictions and enrollment enforcement.</p>
+          <div class="utility-note">If prompted for "PP", press power button repeatedly.</div>
+          <div class="utility-code">
+            gsctool -a -o
+            gsctool -a -I AllowUnverifiedRo:always<br>
+            gsctool -a -w disable<br>
+            flashrom --wp-disable<br>
+            futility gbb --flash --set --flags=0xa0b1<br><br>
+            # Alternative method:<br>
+            cd /tmp<br>
+            flashrom -r -i GBB:gbb.bin<br>
+            futility gbb --set --flags=0xa0b1 gbb.bin<br>
+            flashrom -w -i GBB:gbb.bin -N
+          </div>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-header" onclick="toggleMethod(this)">
+          <span class="method-name">SAUB</span>
+          <span style="display:flex;align-items:center;gap:8px;"><span class="method-tag mt-easy">auto</span><span class="chevron">▾</span></span>
+        </div>
+        <div class="method-body">
+          <p>Automated unenrollment script for managed devices. <strong>Requires developer mode.</strong> If not in dev mode, use DAUB instead.</p>
+          <div class="utility-note">📡 Connect to internet, run this command, enter <code>1</code>, restart, repeat, then exit and reboot.</div>
+          <div class="utility-code">curl -sSL https://raw.githubusercontent.com/CriticalHD/Myscripts/refs/heads/main/SAUB | sudo bash</div>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-header" onclick="toggleMethod(this)">
+          <span class="method-name">DAUB</span>
+          <span style="display:flex;align-items:center;gap:8px;"><span class="method-tag mt-med">recovery</span><span class="chevron">▾</span></span>
+        </div>
+        <div class="method-body">
+          <p>Direct unenrollment via BadSH1MMER — a modified recovery image that automatically deprovisions the device on boot. Works on many Cr50 boards where standard methods fail. <strong>Use this if not in developer mode.</strong></p>
+          <div class="utility-note"> <strong>Instructions:</strong> Download BadSH1MMER for your board, flash to USB, boot in recovery mode, and follow the on-screen prompts for automatic unenrollment.</div>
+          <div class="method-footer">
+            <a class="dl-btn" href="https://dl.crosbreaker.dev/ChromeOS/modified-recovery/badsh1mmer/" target="_blank">↓ Find Download on dl.crosbreaker.dev</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warning-box warning-orange">
+       <strong>WARNING:</strong> After unenrollment you will not be able to use applications like your tests. Either re-enroll or find the web version.
+    </div>
+
+    <button class="back-btn" style="margin-top:28px;" onclick="showPage(2)">← choose different board</button>
+  </div>
+
+<script>
+// BOARD_DB with codenames only
+const BOARD_DB = {
+  trogdor: {label:"Trogdor", platform:"Qualcomm SC7180", arch:"ARM64", ec:"Cr50", subtypes:["lazor","limozeen","pompom","wormdingler","coachz","mrbossian","quackingstick"], methods:["sh1mmer","badrecovery","badbr0ker","quicksilver"]},
+  lazor: {label:"Lazor", platform:"Qualcomm SC7180", arch:"ARM64", ec:"Cr50", subtypes:[], methods:["sh1mmer","badrecovery","badbr0ker","quicksilver"]},
+  cherry: {label:"Cherry", platform:"MediaTek MT8195", arch:"ARM64", ec:"Cr50", subtypes:["tomato","myst","damu"], methods:["baddieapple","sh1ttyoobe","badbr0ker","quicksilver"]},
+  corsola: {label:"Corsola", platform:"MediaTek MT8186", arch:"ARM64", ec:"Ti50", subtypes:["magneton","dojo"], methods:["baddieapple","sh1ttyoobe","quicksilver"]},
+  hatch: {label:"Hatch", platform:"Intel Ice Lake", arch:"x86_64", ec:"Cr50", subtypes:["kohaku","helios","jinlon","dratini"], methods:["sh1mmer","badrecovery","quicksilver"]},
+  volteer: {label:"Volteer", platform:"Intel Tiger Lake", arch:"x86_64", ec:"Cr50", subtypes:["voxel","voema","volta","volet","vorlage","syndra","sarien","vayne","palkia","fleex","drallion","arcada","akemi","wahoo"], methods:["sh1mmer","badrecovery","quicksilver"]},
+  brya: {label:"Brya", platform:"Intel Alder Lake", arch:"x86_64", ec:"Ti50", subtypes:["felwinter","primus","taeko","craask","crota","brask","lismore","dirinboz","berknip"], methods:["baddieapple","sh1ttyoobe","pencil","quicksilver"]},
+  nissa: {label:"Nissa", platform:"Intel Alder Lake N", arch:"x86_64", ec:"Ti50", subtypes:[], methods:["baddieapple","sh1ttyoobe","pencil","quicksilver"]},
+  guybrush: {label:"Guybrush", platform:"AMD Mendocino", arch:"x86_64", ec:"Ti50", subtypes:["vilboz","nipperkin","jelboz","jelboz64","kasumi360"], methods:["baddieapple","sh1ttyoobe","pencil","quicksilver"]},
+  skyrim: {label:"Skyrim", platform:"AMD Mendocino", arch:"x86_64", ec:"Ti50", subtypes:[], methods:["baddieapple","sh1ttyoobe","pencil","quicksilver"]},
+  rex: {label:"Rex", platform:"AMD Phoenix", arch:"x86_64", ec:"Ti50", subtypes:["staryu"], methods:["baddieapple","pencil","quicksilver"]},
+  dedede: {label:"Dedede", platform:"Intel Jasper Lake", arch:"x86_64", ec:"Cr50", subtypes:["metaknight","waddledoo","shredder","lillipup","nightfury","steelix","tentacruel","walrein","madoo","tiger","zako"], methods:["sh1mmer","badrecovery","badbr0ker","quicksilver"]},
+  octopus: {label:"Octopus", platform:"Intel Gemini Lake", arch:"x86_64", ec:"Cr50", subtypes:["blooglet","bobba","dood","foob","garg","lick","meowth","mimrock","moonrock","nasher","orbatrix","phaser360","sparky","sparky360","ampton"], methods:["sh1mmer","badrecovery","br1ck","legacy","quicksilver"]},
+  grunt: {label:"Grunt", platform:"AMD Stoney Ridge", arch:"x86_64", ec:"Cr50", subtypes:["barla","careena","kasumi","treeya","nuwani","zorba","banon"], methods:["sh1mmer","badrecovery","br1ck","legacy","quicksilver"]},
+  coral: {label:"Coral", platform:"Intel Apollo Lake", arch:"x86_64", ec:"Cr50", subtypes:["astronaut","babymega","babytiger","blacktip","bruce","casta","epaulette","guard","laser","lava","rabbid","robo360","santa","serpent","whitetip","reks","jacuzzi","jonquil","kindred","kingler","phaser","quillback","starfish"], methods:["sh1mmer","badrecovery","br1ck","legacy","quicksilver"]},
+  eve: {label:"Eve", platform:"Intel Kaby Lake Y", arch:"x86_64", ec:"Cr50", subtypes:[], methods:["sh1mmer","badrecovery","quicksilver"]},
+  atlas: {label:"Atlas", platform:"Intel Whiskey Lake", arch:"x86_64", ec:"Cr50", subtypes:[], methods:["sh1mmer","badrecovery","quicksilver"]},
+  nami: {label:"Nami", platform:"Intel Kaby Lake U", arch:"x86_64", ec:"Cr50", subtypes:["akali","bard","ekko","sona","pantheon"], methods:["sh1mmer","badrecovery","quicksilver"]},
+  kukui: {label:"Kukui", platform:"MediaTek MT8173", arch:"ARM64", ec:"Cr50", subtypes:["hana","kodama","kakadu","kappa","fennel","flapjack","krane"], methods:["sh1mmer","badrecovery","legacy"]},
+  bob: {label:"Bob", platform:"RK3399", arch:"ARM64", ec:"Cr50", subtypes:["kevin","scarlet"], methods:["sh1mmer","badrecovery"]},
+  samus: {label:"Samus", platform:"Intel Broadwell", arch:"x86_64", ec:"H1", subtypes:[], methods:["sh1mmer","legacy"]},
+  cyan: {label:"Cyan", platform:"Intel Braswell", arch:"x86_64", ec:"H1", subtypes:[], methods:["sh1mmer","legacy"]},
+  zork: {label:"Zork", platform:"AMD Picasso / Dali", arch:"x86_64", ec:"Cr50", subtypes:["dalboz","morphius","dirinboz2","ezkinil","gooey","woomax","zorro"], methods:["sh1mmer","badrecovery","quicksilver"]}
+};
+
+const BOARD_NAMES = Object.keys(BOARD_DB).sort();
+document.getElementById('boardCount').textContent = BOARD_NAMES.length;
+
+const METHODS = {
+  sh1mmer: { name: "SH1MMER", difficulty: "easy", tag: "mt-easy", desc: "Boot a modified RMA shim image to deprovision the device. Works on unkeyrolled Cr50 boards.", compat: "✓ Unkeyrolled Cr50 boards · ChromeOS ≤ R125", steps: ["Find SH1MMER for your board on dl.crosbreaker.dev", "Flash to USB using Chromebook Recovery Utility", "Enter recovery: Esc + Refresh + Power", "Boot USB, select Un-Enroll", "Reboot and complete setup"] },
+  badrecovery: { name: "BadRecovery", difficulty: "easy", tag: "mt-easy", desc: "Modified recovery image exploiting ChromeOS recovery scripts. Works on older Cr50 boards.", compat: "✓ Cr50 boards · ChromeOS R124 and below", steps: ["Find BadRecovery image for your board on dl.crosbreaker.dev", "Flash to USB", "Enter recovery mode", "Boot USB", "Enable developer mode", "Complete setup"] },
+  badbr0ker: { name: "Badbr0ker", difficulty: "medium", tag: "mt-med", desc: "FWMP removal tool for keyrolled Cr50 devices. Requires Sh1ttyOOBE first.", compat: "✓ Keyrolled Cr50 boards · ChromeOS R133 and below", steps: ["Complete Sh1ttyOOBE first", "Enable developer mode", "Find Badbr0ker on dl.crosbreaker.dev", "Boot USB, connect WiFi, run br0ker.sh", "Reboot unenrolled"] },
+  baddieapple: { name: "Baddieapple", difficulty: "medium", tag: "mt-med", desc: "Recovery image for keyrolled Ti50/Cr50 boards. Provides shell access for VPD manipulation.", compat: "✓ kv5+ boards: nissa, brya, guybrush, skyrim, corsola, cherry", steps: ["Find Baddieapple on dl.crosbreaker.dev", "Flash to USB", "Enter recovery mode, boot USB", "Open VT3 shell (Ctrl+Alt+F3)", "Run vpd command to unenroll"] },
+  quicksilver: { name: "Quicksilver", difficulty: "easy", tag: "mt-easy", desc: "VPD overwrite exploit that prevents re-enrollment. Run as SH1MMER payload or via Baddieapple.", compat: "✓ Most boards · ChromeOS R125–R142", steps: ["Boot SH1MMER or Baddieapple", "Access payload menu or shell", "Run vpd command", "Reboot unenrolled"] },
+  sh1ttyoobe: { name: "Sh1ttyOOBE", difficulty: "easy", tag: "mt-easy", desc: "Bypasses managed OOBE enrollment loop without USB. Works on ChromeOS 133–137.", compat: "✓ All managed boards · ChromeOS R133–R137", steps: ["At welcome screen, wait for 'Quick set up with Android'", "Press that button, sign in with school account", "Sign out, go through OOBE again", "At 'Please wait', press Alt+Vol Up+X", "Device unenrolled for session"] },
+  br1ck: { name: "BR1CK", difficulty: "medium", tag: "mt-med", desc: "EC reset exploit that interrupts FWMP creation. Leaves blank FWMP for SH1MMER to run.", compat: "✓ Non-platform-FWMP Cr50 boards · ChromeOS R131 and below", steps: ["During boot, press Refresh+Power at precise moment", "Boot SH1MMER shim", "Run TPM reset twice", "Run Deprovision commands", "Complete setup"] },
+  pencil: { name: "Pencil / Hardware WP", difficulty: "hard", tag: "mt-hard", desc: "Physical write-protect bypass for Ti50 boards. Requires disassembly.", compat: "⚠ Ti50 boards: brya, nissa, guybrush, skyrim, rex", steps: ["Open Chromebook, locate WP pad", "Bridge with pencil or remove WP screw", "Boot with WP disabled", "Flash firmware or run unkeyroll", "Set GBB flags"] },
+  legacy: { name: "Legacy / Dev Mode", difficulty: "medium", tag: "mt-med", desc: "Pre-2019 boards often have no FWMP enforcement. Direct dev mode may unenroll.", compat: "✓ EOL boards (pre-2019) · H1 EC", steps: ["Enable developer mode: Esc+Refresh+Power, Ctrl+D", "If blocked, use SH1MMER", "Check community archives"] }
+};
+
+let selectedBoard = null;
+let lastBuiltBoard = null;
+
+const P1_LINES = [
+  {cls:"cmd", text:"check_enrollment_status"},
+  {cls:"ok", text:"ENROLLED: TRUE  ·  ADMIN POLICIES: ACTIVE"},
+  {cls:"cmd", text:"initiate_unenroll --bypass-fwmp"},
+  {cls:"warn", text:"⚠ modifying system-level protections"},
+  {cls:"warn", text:"⚠ admin restrictions will be removed"},
+  {cls:"cmd", text:"status"},
+  {cls:"done", text:"✓ ENROLLED: FALSE  ·  OWNER: USER"},
+];
+
+function animatePage1() {
+  const term = document.getElementById('p1terminal');
+  const body = document.getElementById('p1body');
+  term.style.transition = 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22,1,0.36,1)';
+  term.style.opacity = '1';
+  term.style.transform = 'translateY(0)';
+  let lineIdx = 0, charIdx = 0;
+  let currentSpan = null;
+  function nextChar() {
+    if (lineIdx >= P1_LINES.length) return;
+    const line = P1_LINES[lineIdx];
+    if (charIdx === 0) {
+      currentSpan = document.createElement('span');
+      currentSpan.className = 'tl ' + line.cls;
+      body.appendChild(currentSpan);
+    }
+    if (charIdx < line.text.length) {
+      currentSpan.textContent += line.text[charIdx];
+      charIdx++;
+      setTimeout(nextChar, line.cls === 'cmd' ? 38 : 18);
+    } else {
+      lineIdx++; charIdx = 0;
+      setTimeout(nextChar, line.cls === 'cmd' ? 320 : 80);
+    }
+  }
+  setTimeout(nextChar, 600);
+}
+
+function showPage(n) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page'+n).classList.add('active');
+  window.scrollTo(0,0);
+  if (n === 2) {
+    const t = document.getElementById('inputTerminal');
+    t.style.transition = 'none';
+    t.style.opacity = '0'; t.style.transform = 'translateY(28px)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      t.style.transition = 'opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)';
+      t.style.opacity = '1'; t.style.transform = 'translateY(0)';
+    }));
+    setTimeout(() => document.getElementById('boardInput').focus(), 400);
+  }
+}
+
+function onBoardInput() {
+  const val = document.getElementById('boardInput').value.trim().toLowerCase();
+  const sugDiv = document.getElementById('suggestions');
+  const resDiv = document.getElementById('boardResult');
+  const confirmBtn = document.getElementById('confirmBtn');
+  selectedBoard = null;
+  confirmBtn.classList.remove('ready');
+  if (!val) {
+    sugDiv.innerHTML = '';
+    resDiv.innerHTML = '<span class="r-hint">Type your board name above…</span>';
+    return;
+  }
+  const matches = BOARD_NAMES.filter(b => b.startsWith(val));
+  const exact = BOARD_NAMES.includes(val);
+  if (exact) {
+    selectedBoard = val;
+    confirmBtn.classList.add('ready');
+    resDiv.innerHTML = `<span class="r-found">✓ recognised: <strong>${BOARD_DB[val].label}</strong> — ${BOARD_DB[val].platform}</span>`;
+  } else if (matches.length) {
+    resDiv.innerHTML = `<span class="r-hint">${matches.length} match${matches.length>1?'es':''} — select one below</span>`;
+  } else {
+    resDiv.innerHTML = `<span class="r-notfound">✗ not found — check chrome://version</span>`;
+  }
+  sugDiv.innerHTML = matches.slice(0,10).map(b => `<span class="tag${b===selectedBoard?' selected':''}" onclick="selectBoard('${b}')">${b}</span>`).join('');
+}
+
+function selectBoard(n) {
+  document.getElementById('boardInput').value = n;
+  onBoardInput();
+}
+
+function confirmBoard() {
+  if (!selectedBoard) return;
+  buildPage3(selectedBoard);
+  showPage(3);
+}
+
+function buildPage3(board) {
+  if (lastBuiltBoard === board) return;
+  lastBuiltBoard = board;
+  const data = BOARD_DB[board];
+  if (!data) return;
+
+  document.getElementById('p3badge').textContent = board.toUpperCase();
+  document.getElementById('p3title').textContent = data.label;
+
+  const ecColor = data.ec === 'Ti50' ? 'yellow' : (data.ec === 'Cr50' ? 'green' : '');
+  const grid = document.getElementById('p3grid');
+  grid.innerHTML = `
+    <div class="info-card"><div class="label">Platform</div><div class="value">${data.platform}</div></div>
+    <div class="info-card"><div class="label">Architecture</div><div class="value">${data.arch}</div></div>
+    <div class="info-card"><div class="label">Security Chip</div><div class="value ${ecColor}">${data.ec}</div><div class="sub-val">${data.ec === 'Ti50' ? 'Keyrolled — use Baddieapple' : data.ec === 'Cr50' ? 'SH1MMER compatible' : 'Legacy EC'}</div></div>
+    <div class="info-card"><div class="label">Keyroll Status</div><div class="value ${data.ec === 'Ti50' ? 'yellow' : 'green'}">${data.ec === 'Ti50' ? 'Keyrolled' : 'Unkeyrolled'}</div><div class="sub-val">${data.ec === 'Ti50' ? 'Use Baddieapple/Quicksilver' : 'SH1MMER/BadRecovery work'}</div></div>
+  `;
+  
+  const row2 = document.createElement('div');
+  row2.style.cssText = 'width:100%;max-width:580px;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:0;flex-shrink:0;';
+  row2.innerHTML = `<div class="info-card"><div class="label">Methods Available</div><div class="value green">${data.methods.length} method${data.methods.length!==1?'s':''}</div></div><div class="info-card"><div class="label">Best First Try</div><div class="value blue">${data.ec === 'Ti50' ? 'Baddieapple / Quicksilver' : 'SH1MMER / BadRecovery'}</div></div>`;
+  grid.after(row2);
+
+  const stDiv = document.getElementById('p3subtypes');
+  if (data.subtypes && data.subtypes.length > 0) {
+    stDiv.innerHTML = '<span style="font-size:0.62rem;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-right:8px;">Also known as:</span>' + data.subtypes.slice(0,12).map(s => `<span class="subtype-tag">${s}</span>`).join('');
+  } else {
+    stDiv.innerHTML = '';
+  }
+
+  const list = document.getElementById('methodsList');
+  list.innerHTML = '';
+  data.methods.forEach((mKey, i) => {
+    const m = METHODS[mKey];
+    if (!m) return;
+    const card = document.createElement('div');
+    card.className = 'method-card';
+    const stepsHtml = m.steps.map(s => `<li>${s}</li>`).join('');
+    card.innerHTML = `
+      <div class="method-header" onclick="toggleMethod(this)">
+        <span class="method-name">${m.name}</span>
+        <span style="display:flex;align-items:center;gap:8px;"><span class="method-tag ${m.tag}">${m.difficulty}</span><span class="chevron">▾</span></span>
+      </div>
+      <div class="method-body${i===0?' open':''}">
+        <p>${m.desc}</p>
+        <div class="method-compat">${m.compat}</div>
+        <ol style="margin-top:12px">${stepsHtml}</ol>
+        <div class="method-footer">
+          <a class="dl-btn" href="https://dl.crosbreaker.dev" target="_blank">Find Download</a>
+        </div>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function toggleMethod(header) {
+  const body = header.nextElementSibling;
+  const chev = header.querySelector('.chevron');
+  if (body) body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open');
+}
+
+window.addEventListener('load', () => { animatePage1(); });
+</script>
+</body>
+</html>
