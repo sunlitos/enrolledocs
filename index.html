@@ -317,18 +317,7 @@
     </div>
 
     <div class="warning-box">
-      RUN GBB TO BE SAFE:
-      Note: If prompted for "PP" (physical presence), press the power button repeatedly until it stops. & itll ask then ask again every 40 secs for 4 - 6 times, cmd:  gsctool -a -o After that ran and u did the pp it should restart then go back to dev mode (5 min wait sorry) Then run these commands in dev console:
-```gsctool -a -I AllowUnverifiedRo:always
-gsctool -a -w disable
-flashrom --wp-disable (normal if this fails)
-futility flash gbbfutility gbb -s --flash --flags=0xa0b1 
-if this doesn't work run these in succession:
-cd /tmp
-flashrom -r -i GBB:gbb.bin
-futility gbb -s --flags=0xa0b1 gbb.bin 
-flashrom -w -i GBB:gbb.bin -N```
-
+      WARNING YOU WILL NOT HAVE YOUR APPS FOR TESTS FIND THE WEB VERSION IF YOU NEED OR REENROLL
     </div>
 
     <button class="back-btn" style="margin-top:28px;" onclick="showPage(2)">← choose different board</button>
