@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enrolledocs</title>
+  <title>Unenrollment Docs</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -359,8 +359,9 @@
   <div class="grid"></div>
   <div class="credits">Crosbreaker · CriticalHD · <span>Exvy</span></div>
 
+  <!-- PAGE 1 -->
   <div class="page active" id="page1">
-    <h1>Enrolledocs</h1>
+    <h1>Unenrollment<br>Docs</h1>
     <div class="line"></div>
     <p class="desc">Unenrollment removes enterprise control from a managed ChromeOS device — restoring full user ownership and disabling enforced policies set by school or workplace admins.</p>
 
@@ -378,7 +379,7 @@
     <button class="btn" id="continueBtn" onclick="showPage(2)">Continue →</button>
   </div>
 
-
+  <!-- PAGE 2 -->
   <div class="page" id="page2">
     <h2>Finding Your<br>Chromebook</h2>
     <div class="line"></div>
@@ -401,7 +402,7 @@
     </div>
 
     <div class="version-hint">
-       <strong>Can't find your board?</strong> On your Chromebook, open a new tab and go to <a href="chrome://version">chrome://version</a>. Look for the "Platform" line — your board name is the word right after <code>stable-channel</code>. Example: <code>stable-channel-octopus</code> → board is <strong>octopus</strong>.<br>
+      💡 <strong>Can't find your board?</strong> On your Chromebook, open a new tab and go to <a href="chrome://version">chrome://version</a>. Look for the "Platform" line — your board name is the word right after <code>stable-channel</code>. Example: <code>stable-channel-octopus</code> → board is <strong>octopus</strong>.<br>
       Blocked? Try <a href="chrome://system">chrome://system</a> and search for <code>CHROMEOS_RELEASE_DESCRIPTION</code>.
     </div>
 
@@ -413,6 +414,7 @@
     <button class="back-btn" onclick="showPage(1)">← back</button>
   </div>
 
+  <!-- PAGE 3 -->
   <div class="page" id="page3">
     <div class="device-header">
       <div class="board-badge" id="p3badge"></div>
@@ -424,17 +426,20 @@
     <div id="p3row2"></div>
     <div id="p3subtypes" class="subtypes-list" style="width:100%;max-width:560px;margin-top:10px;flex-shrink:0;"></div>
 
+    <!-- ChromeOS version now shown in info grid -->
     <div class="version-box" id="p3versions" style="display:none"></div>
 
+    <!-- Exploits -->
     <div class="methods-container">
       <div class="methods-title">▸ Available Unenrollment Methods</div>
       <div id="methodsList"></div>
     </div>
 
     <div class="warning-box">
-       These methods modify system-level protections. Only proceed if you own this device or have explicit permission from the owner. Some methods may cause data loss — back up your files first.
+      ⚠ These methods modify system-level protections. Only proceed if you own this device or have explicit permission from the owner. Some methods may cause data loss — back up your files first.
     </div>
 
+    <!-- Utilities & Extras -->
     <div class="section-divider" style="width:100%;max-width:560px;flex-shrink:0;">
       <span class="sd-label">Utilities &amp; Extras</span>
     </div>
